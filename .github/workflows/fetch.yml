@@ -1,0 +1,36 @@
+name: Fetch URL via Email
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get URL from Issue Title
+        id: get-url
+        run: |
+          echo "url=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+
+      - name: Fetch Content
+        run: |
+          URL="${{ steps.get-url.outputs.url }}"
+          echo "Fetching: $URL"
+          # Use allorigins.win to bypass CORS and fetch the site
+          CONTENT=$(curl -s "https://api.allorigins.win/raw?url=${URL}")
+          echo "$CONTENT" > result.txt
+
+      - name: Send Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          connection_url: ${{ secrets.MAIL_URL }}
+          from: ${{ secrets.EMAIL_FROM }}
+          to: ${{ secrets.EMAIL_TO }}
+          subject: "Proxy Result: ${{ github.event.issue.title }}"
+          body: |
+            Here is the content from:
+            ${{ github.event.issue.title }}
+            
+            ---
+            $(cat result.txt)
