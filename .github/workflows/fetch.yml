@@ -10,12 +10,19 @@ jobs:
     steps:
       - name: Get URL from Issue Title
         id: get-url
+        env:
+          ISSUE_TITLE_IN: ${{ github.event.issue.title }}
         run: |
-          echo "url=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+          delim="URL_EOF_${RANDOM}${RANDOM}"
+          echo "url<<$delim" >> "$GITHUB_OUTPUT"
+          echo "$ISSUE_TITLE_IN" >> "$GITHUB_OUTPUT"
+          echo "$delim" >> "$GITHUB_OUTPUT"
 
       - name: Fetch Content
+        env:
+          URL_IN: ${{ steps.get-url.outputs.url }}
         run: |
-          URL="${{ steps.get-url.outputs.url }}"
+          URL="$URL_IN"
           echo "Fetching: $URL"
           # Use allorigins.win to bypass CORS and fetch the site
           CONTENT=$(curl -s "https://api.allorigins.win/raw?url=${URL}")
